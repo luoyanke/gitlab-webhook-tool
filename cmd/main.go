@@ -35,7 +35,7 @@ func main() {
 		var baseBody internal.BaseBody
 		err := json.Unmarshal(bodyBytes, &baseBody)
 		if err != nil {
-			log.Fatal(err)
+			log.Print(err)
 			return
 		}
 		if baseBody.ObjectKind == "merge_request" {
@@ -56,7 +56,7 @@ func mergeRequestNotify(bodyBytes []byte, feishuWebhook string) {
 	var writer bytes.Buffer
 	err := json.Unmarshal(bodyBytes, &body)
 	if err != nil {
-		log.Fatal(err)
+		log.Print(err)
 		return
 	}
 
@@ -105,19 +105,28 @@ func pushNotify(bodyBytes []byte, feishuWebhook string) {
 	var writer bytes.Buffer
 	err := json.Unmarshal(bodyBytes, &body)
 	if err != nil {
-		log.Fatal(err)
+		log.Print(err)
 		return
 	}
 	var commits string
+	//regp := regexp.MustCompile(`[\pP]*`)
 	for index, obj := range body.Commits {
 		msg := strings.ReplaceAll(obj.Message, "\n", "")
-		commits += "- " + obj.Author.Name + "< " + obj.Author.Email + " >:   " + msg + "\\n"
+		//msg = strings.ReplaceAll(msg, "'", "")
+		//msg = strings.ReplaceAll(msg, "#", "")
+		msg = strings.ReplaceAll(msg, "	", " ")
+		//msg = regp.ReplaceAllString(msg, "")
+		if len(msg) > 600 {
+			msg = msg[0:600]
+		}
+		commits += "- " + obj.Author.Name + "< " + obj.Author.Email + " >: \\n" + msg + "\\n\\n"
 		if index > 8 {
 			i := len(body.Commits) - index
 			commits += "-  other " + strconv.Itoa(i) + " commit  ...\\n"
 			break
 		}
 	}
+
 	branch := strings.Replace(body.Ref, "refs/heads/", "", 1)
 	tmpl, _ := template.New("index").Parse(internal.PushFeishuCardTmpl())
 	tmpl.Execute(&writer, map[string]interface{}{
@@ -141,12 +150,33 @@ func pushNotify(bodyBytes []byte, feishuWebhook string) {
 	req.Header.Set("Content-Type", "application/json")
 	client := &http.Client{}
 	resp, err := client.Do(req)
+	defer resp.Body.Close()
 	if err != nil {
 		log.Fatalln(err)
 	} else {
+		var result FeishuWebHookResp
+		var bodyBytes, _ = ioutil.ReadAll(resp.Body)
+		err := json.Unmarshal(bodyBytes, &result)
+		if err != nil {
+			log.Print(err)
+			return
+		}
+		if result.Code != 0 {
+			bytearray, _ := json.Marshal(result)
+			log.Print(string(bytearray))
+			log.Print(cardBody)
+		}
+		//var bodyBytes, _ = ioutil.ReadAll(resp.Body)
+		//log.Print(string(bodyBytes))
 		//var bodyBytes, _ = ioutil.ReadAll(req.Body)
 		//s := string(bodyBytes)
 		//log.Print(s)
 	}
-	defer resp.Body.Close()
+
+}
+
+type FeishuWebHookResp struct {
+	Code int                    `json:"code"`
+	Data map[string]interface{} `json:"data"`
+	Msg  string                 `json:"msg"`
 }

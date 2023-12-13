@@ -49,11 +49,11 @@ func PushFeishuCardTmpl() string {
 			  "tag": "hr"
 			},
 			{
-			  "tag": "div",
-			  "text": {
+			  "tag": "note",
+			  "elements": [{
 				"content": "{{.commit}}",
-				"tag": "lark_md"
-			  }
+				"tag": "plain_text"
+			  }]
 			}
 		  ],
 		  "header": {
