@@ -132,7 +132,7 @@ func MergeRequestFeishuCardTmpl() string {
 			}
 		  ],
 		  "header": {
-			"template": "blue",
+			"template": "{{.headerColor}}",
 			"title": {
 			  "content": "{{.title}}",
 			  "tag": "plain_text"

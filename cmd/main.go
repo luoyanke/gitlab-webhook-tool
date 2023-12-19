@@ -61,12 +61,19 @@ func mergeRequestNotify(bodyBytes []byte, feishuWebhook string) {
 	}
 
 	var title string
+	var headerColor string
 	if body.ObjectAttributes.State == "opened" {
 		title = body.Project.Name + " 合并请求提交事件"
+		headerColor = "blue"
 	} else if body.ObjectAttributes.State == "merged" {
 		title = body.Project.Name + " 合并请求完成事件"
+		headerColor = "blue"
+	} else if body.ObjectAttributes.State == "closed" {
+		title = body.Project.Name + " 合并请求关闭事件"
+		headerColor = "red"
 	} else {
 		title = body.Project.Name + " 合并请求事件"
+		headerColor = "blue"
 	}
 
 	tmpl, _ := template.New("index").Parse(internal.MergeRequestFeishuCardTmpl())
@@ -77,6 +84,7 @@ func mergeRequestNotify(bodyBytes []byte, feishuWebhook string) {
 		"targetBranch": body.ObjectAttributes.TargetBranch,
 		"webUrl":       body.Project.WebURL + "/merge_requests",
 		"title":        title,
+		"headerColor":  headerColor,
 	})
 	var cardBody internal.FeishuCard
 	cardBody.MsgType = "interactive"
