@@ -111,19 +111,16 @@ func mergeRequestNotify(bodyBytes []byte, feishuWebhook string) {
 func pushNotify(bodyBytes []byte, feishuWebhook string) {
 	var body internal.PushRequestBody
 	var writer bytes.Buffer
+
 	err := json.Unmarshal(bodyBytes, &body)
 	if err != nil {
 		log.Print(err)
 		return
 	}
 	var commits string
-	//regp := regexp.MustCompile(`[\pP]*`)
 	for index, obj := range body.Commits {
 		msg := strings.ReplaceAll(obj.Message, "\n", "")
-		//msg = strings.ReplaceAll(msg, "'", "")
-		//msg = strings.ReplaceAll(msg, "#", "")
 		msg = strings.ReplaceAll(msg, "	", " ")
-		//msg = regp.ReplaceAllString(msg, "")
 		if len(msg) > 600 {
 			msg = msg[0:600]
 		}
@@ -134,6 +131,15 @@ func pushNotify(bodyBytes []byte, feishuWebhook string) {
 			break
 		}
 	}
+	var title string
+	var headerColor string
+	if body.After == "0000000000000000000000000000000000000000" {
+		title = body.Project.Name + " 删除代码分支事件"
+		headerColor = "red"
+	} else {
+		title = body.Project.Name + " 代码推送事件"
+		headerColor = "turquoise"
+	}
 
 	branch := strings.Replace(body.Ref, "refs/heads/", "", 1)
 	tmpl, _ := template.New("index").Parse(internal.PushFeishuCardTmpl())
@@ -143,7 +149,8 @@ func pushNotify(bodyBytes []byte, feishuWebhook string) {
 		"ref":         body.Ref,
 		"webUrl":      body.Project.WebURL + "/commits/" + branch,
 		"commit":      commits,
-		"title":       body.Project.Name + " 代码推送事件",
+		"title":       title,
+		"headerColor": headerColor,
 	})
 
 	var cardBody internal.FeishuCard

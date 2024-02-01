@@ -57,7 +57,7 @@ func PushFeishuCardTmpl() string {
 			}
 		  ],
 		  "header": {
-			"template": "turquoise",
+			"template": "{{.headerColor}}",
 			"title": {
 			  "content": "{{.title}}",
 			  "tag": "plain_text"
